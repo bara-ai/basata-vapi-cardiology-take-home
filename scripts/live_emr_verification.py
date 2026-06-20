@@ -6,7 +6,6 @@ from datetime import UTC, datetime
 import hashlib
 import json
 import os
-from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -172,26 +171,12 @@ async def run_live_verification(
     }
 
 
-def _append_note(note_path: Path, result: dict[str, str]) -> None:
-    note_path.parent.mkdir(parents=True, exist_ok=True)
-    note_path.write_text(
-        note_path.read_text() + "\n" if note_path.exists() else "# Live Test Notes\n",
-        encoding="utf-8",
-    )
-    with note_path.open("a", encoding="utf-8") as note:
-        note.write(
-            f"\n- No-reset run `{result['run_id']}`: patient `{result['patient_id']}`, "
-            f"appointment `{result['appointment_id']}`, status `{result['appointment_status']}`.\n"
-        )
-
-
 def main() -> None:
     load_dotenv()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--webhook-url", default=os.environ.get("VAPI_WEBHOOK_URL"))
     parser.add_argument("--emr-base-url", default=os.environ.get("EMR_BASE_URL"))
     parser.add_argument("--run-id", default=None)
-    parser.add_argument("--notes", type=Path, default=Path("LIVE_TEST_NOTES.md"))
     args = parser.parse_args()
 
     if not args.webhook_url or not args.emr_base_url:
@@ -205,7 +190,6 @@ def main() -> None:
             run_id=args.run_id,
         )
     )
-    _append_note(args.notes, result)
     print(json.dumps(result, indent=2))
 
 
