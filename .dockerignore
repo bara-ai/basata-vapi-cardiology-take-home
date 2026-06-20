@@ -1,0 +1,16 @@
+.env
+.git
+.pytest_cache
+__pycache__
+**/__pycache__
+*.pyc
+tests
+work
+tmp
+outputs
+*.pdf
+*.docx
+Tasks.md
+SUBMISSION_WRITEUP.md
+README.md
+vapi
