@@ -2,28 +2,46 @@
 
 ## What I Built
 
-I built a Vapi scheduling assistant for Heartland Cardiology with a FastAPI webhook backend connected to the CardioChart Pro sandbox EMR. The assistant is configured in the Interview Sandbox as [Heartland Cardiology](https://dashboard.vapi.ai/assistants/9ca91034-3de4-44be-bba6-5aa756128d64?tab=assistant) and is assigned to `+1 601 419 9125`.
+I made a Vapi voice assistant for Heartland Cardiology. It is connected to a FastAPI backend and the CardioChart Pro sandbox EMR. The assistant is in the Interview Sandbox as [Heartland Cardiology](https://dashboard.vapi.ai/assistants/9ca91034-3de4-44be-bba6-5aa756128d64?tab=assistant). The phone number is `+1 601 419 9125`.
 
-The assistant supports new-patient registration, existing-patient verification, provider lookup, slot search, appointment booking, appointment lookup, cancellation, and rescheduling. Eight Vapi function tools map these tasks to the backend. The backend then reads or changes only the EMR data needed for that step. Providers, available times, appointment details, and confirmations always come from the EMR rather than from the model.
+The assistant can register a new patient and find an existing patient and find providers and available slots and book appointments and look up appointments and cancel appointments and reschedule appointments.
 
-## Important Workflow Decisions
+## How It Works
 
-For an existing patient, the system requires both the phone number on the record and the date of birth before it returns appointments or allows a booking, cancellation, or reschedule. Matching only a name or only a phone number would be too weak because it could disclose another patient's information or allow a caller to change their appointment. The backend repeats this verification for protected actions instead of relying only on what the model remembers from the conversation.
+The caller talks with the Vapi assistant. The assistant follows the system prompt and asks the needed questions one by one. When it needs real information it calls one of the Vapi tools.
 
-For a new patient, the assistant collects first name, last name, date of birth, and phone number. Email and insurance fields are collected when available because they are optional in the EMR. Before creating the patient, the assistant reads the details back and waits for a clear confirmation. It also checks for an existing phone number before creation, which avoids duplicate records during retries or repeated requests.
+The tool request goes to the FastAPI webhook. The backend checks the request and then calls the EMR. The EMR returns the real patient data and provider data and appointment data. The backend sends the result back to Vapi and then Vapi can continue the call.
 
-Booking and rescheduling require an explicit spoken confirmation after the assistant repeats the provider, date, time, appointment type, and any reason supplied. The backend does not report success until the EMR returns a successful result. This prevents the assistant from making a confident statement based only on a planned tool call.
+The EMR is the source of truth. The assistant does not create provider names or available times or appointment confirmations by itself. It only confirms an action after the EMR returns a successful result.
 
-## Failure Handling And Voice Design
+There are eight tools. They are for patient verification and registration and provider lookup and slot search and appointment lookup and booking and cancellation and rescheduling.
 
-The workflow treats the EMR as the source of truth. If availability search returns no slots, the assistant does not invent alternatives. If a booking receives a conflict, it explains that the selected time is no longer available and searches again. If the EMR is unavailable or a request cannot be safely completed, the assistant asks for staff assistance instead of guessing or claiming a completed action.
+## Important Choices
 
-Rescheduling is handled in backend code as a composite operation because the EMR does not provide a single reschedule endpoint. The backend books the replacement appointment first, then cancels the original. If the replacement cannot be booked, the original appointment stays unchanged. If cancelling the original fails after a successful replacement booking, the backend attempts to cancel the replacement as compensation. If it cannot safely reconcile the two appointments, it returns a human-assistance outcome rather than an inaccurate confirmation. When a caller does not request a new appointment type, the original type is preserved.
+For an existing patient the assistant asks for the phone number on the record and the date of birth. The backend checks both values before it shows appointments or changes an appointment. This helps prevent another person from seeing or changing patient information.
 
-The voice prompt is designed for a phone call rather than a chat interface. It asks one question at a time, uses short sentences, and presents no more than three appointment options. Request-start filler messages such as "Let me check that for you" avoid silence while tools wait on the EMR. The prompt also avoids medical, insurance, pricing, and payment advice. Emergency symptoms stop routine scheduling and direct the caller to emergency services.
+For a new patient the assistant asks for first name and last name and date of birth and phone number. Email and insurance information are optional because the EMR allows them to be optional. Before creating the record the assistant reads the details back and asks the caller to confirm. The backend also checks for an existing phone number before it creates a new patient.
 
-## Verification And Deferred Work
+Before booking or cancelling or rescheduling the assistant repeats the important details and asks for a clear confirmation. This is important because a phone call can have speech errors or misunderstanding. The backend does not say that an appointment is booked or cancelled or changed until the EMR confirms it.
 
-The automated test suite covers Vapi payload handling, authentication, patient workflows, scheduling, cancellation, rescheduling, logging, and the live-test data generator. `48` tests pass. The public webhook was also exercised against the sandbox for registration, provider lookup, slot search, booking, rescheduling, and cancellation, with appointment changes checked directly in the EMR.
+## Failure Cases
 
-Native Vapi call transfer is intentionally deferred. A transfer needs a real front-desk E.164 destination and operating hours, neither of which was supplied. The assistant therefore gives a clear staff-assistance response without saying that a transfer occurred. With more time, I would add a configured transfer destination and business-hours policy, move in-memory idempotency records to Redis or Postgres, use managed HTTPS rather than a development tunnel, and add operational metrics for EMR latency, tool failures, slot conflicts, and escalation rates.
+If there are no slots then the assistant does not make up another time. If a selected slot is no longer available then the EMR returns a conflict and the assistant can search again. If the EMR is not available then the assistant asks for staff help and does not guess the result.
+
+Rescheduling has more than one step. The system first tries to book the replacement appointment and then cancels the old appointment. If the new appointment cannot be booked then the old appointment stays unchanged. If the old appointment cannot be cancelled after the new one is booked then the backend tries to cancel the new appointment again. If the system cannot fix this safely then it asks for staff help. When the caller does not ask to change the appointment type then the old type stays the same.
+
+The backend also has retry protection for booking and other changes. This helps prevent a repeated Vapi request from creating the same action twice during the demo.
+
+## Voice Design
+
+This is made for phone calls and not chat. The assistant uses short sentences and asks one question at a time. It gives no more than three appointment choices. It also uses short filler messages while it waits for the tool result so the caller does not stay in silence.
+
+The assistant does not give medical advice or insurance advice or pricing advice. If the caller describes an emergency then it tells the caller to use emergency services and it stops normal scheduling.
+
+## Testing And Deferred Work
+
+The project has `48` automated tests. They cover Vapi request formats and authentication and patient workflows and booking and cancellation and rescheduling and error cases. The public webhook was also tested with the sandbox EMR for registration and provider lookup and slot search and booking and rescheduling and cancellation.
+
+Native Vapi call transfer is not added yet. A real front desk phone number and business hours were not provided. The assistant says that clinic staff need to help but it does not say that the caller was transferred.
+
+With more time I would use Redis or Postgres for retry protection and use managed deployment instead of a development tunnel. I would also add more monitoring for EMR failures and tool latency and slot conflicts and staff help requests.
