@@ -32,6 +32,8 @@ Rescheduling has more than one step. The system first tries to book the replacem
 
 The backend also has retry protection for booking and other changes. This helps prevent a repeated Vapi request from creating the same action twice during the demo.
 
+Vapi can send a tool request in different payload shapes. The backend changes these shapes into one internal tool request before it starts the workflow. The scheduling tools stay synchronous because the assistant needs the current EMR result before it can continue the same call. The retry protection uses the Vapi `toolCallId` and keeps the result in memory for the demo. For production this should be stored in Redis or Postgres.
+
 ## Voice Design
 
 This is made for phone calls and not chat. The assistant uses short sentences and asks one question at a time. It gives no more than three appointment choices. It also uses short filler messages while it waits for the tool result so the caller does not stay in silence.
