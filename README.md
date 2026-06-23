@@ -50,6 +50,10 @@ Set each Vapi tool server URL to `https://YOUR-NGROK-DOMAIN/vapi/webhook`.
 
 The assistant prompt is in [`vapi/system-prompt.md`](vapi/system-prompt.md), and the tool definitions are in [`vapi/assistant.tools.json`](vapi/assistant.tools.json).
 
+## Demo
+
+[Watch the Vapi call demo](demo/baseet-call-demo.mp4).
+
 ## Verification
 
 - `48` automated tests pass.
