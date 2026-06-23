@@ -56,6 +56,3 @@ The assistant prompt is in [`vapi/system-prompt.md`](vapi/system-prompt.md), and
 - Live webhook verification completed against the EMR sandbox for registration, provider and slot lookup, booking, rescheduling, and cancellation.
 - Rescheduling keeps the original appointment type unless a replacement type is provided.
 
-## Remaining Dependency
-
-Native call transfer is not configured because a front-desk E.164 number and operating hours were not provided. The assistant requests staff assistance without claiming a transfer occurred.
