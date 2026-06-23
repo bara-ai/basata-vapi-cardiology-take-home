@@ -1,4 +1,4 @@
-# Basata Voice AI Take-Home Write-Up
+# Basata Exercise Write-Up
 
 ## What I Built
 
