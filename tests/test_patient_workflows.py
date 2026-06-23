@@ -1,6 +1,6 @@
-import httpx
 import json
 
+import httpx
 import pytest
 
 from app.models.vapi import NormalizedToolCall
@@ -167,7 +167,10 @@ async def test_list_verified_appointments_includes_cancelled_only_when_requested
         include_cancelled=True,
     )
 
-    assert [appointment["id"] for appointment in result["appointments"]] == ["apt_scheduled", "apt_cancelled"]
+    assert [appointment["id"] for appointment in result["appointments"]] == [
+        "apt_scheduled",
+        "apt_cancelled",
+    ]
 
 
 class UnavailableEMRClient:

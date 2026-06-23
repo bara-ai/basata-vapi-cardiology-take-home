@@ -3,6 +3,7 @@ from typing import Any
 
 import httpx
 
+from app.clients.emr import EMRClientProtocol
 from app.services.patients import find_verified_patient
 
 
@@ -14,7 +15,9 @@ def _provider_result(provider: dict[str, Any]) -> dict[str, Any]:
             ", "
         ),
         "specialties": provider.get("specialties", []),
-        "appointment_types": provider.get("supported_appointment_types", provider.get("appointment_types", [])),
+        "appointment_types": provider.get(
+            "supported_appointment_types", provider.get("appointment_types", [])
+        ),
     }
     if provider.get("restrictions") is not None:
         result["restrictions"] = provider["restrictions"]
@@ -22,20 +25,25 @@ def _provider_result(provider: dict[str, Any]) -> dict[str, Any]:
 
 
 def _provider_name(provider: dict[str, Any]) -> str:
-    return provider.get("name") or f"{provider.get('first_name', '')} {provider.get('last_name', '')}, {provider.get('title', '')}".strip(
-        ", "
+    return (
+        provider.get("name")
+        or f"{provider.get('first_name', '')} {provider.get('last_name', '')}, {provider.get('title', '')}".strip(
+            ", "
+        )
     )
 
 
 async def list_providers(
-    emr_client: Any,
+    emr_client: EMRClientProtocol,
     *,
     specialty: str | None = None,
     appointment_type: str | None = None,
 ) -> dict[str, Any]:
     providers = await emr_client.list_providers()
     if specialty:
-        providers = [provider for provider in providers if specialty in provider.get("specialties", [])]
+        providers = [
+            provider for provider in providers if specialty in provider.get("specialties", [])
+        ]
     if appointment_type:
         providers = [
             provider
@@ -51,7 +59,7 @@ async def list_providers(
 
 
 async def search_slots(
-    emr_client: Any,
+    emr_client: EMRClientProtocol,
     *,
     patient_id: str,
     appointment_type: str,
@@ -84,8 +92,7 @@ async def search_slots(
         return {"status": "no_slots", "slots": []}
 
     provider_names = {
-        provider["id"]: _provider_name(provider)
-        for provider in await emr_client.list_providers()
+        provider["id"]: _provider_name(provider) for provider in await emr_client.list_providers()
     }
     return {
         "status": "ok",
@@ -97,7 +104,7 @@ async def search_slots(
 
 
 async def book_appointment(
-    emr_client: Any,
+    emr_client: EMRClientProtocol,
     *,
     patient_id: str,
     verification_phone: str,

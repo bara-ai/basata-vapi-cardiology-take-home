@@ -1,34 +1,38 @@
-import json
 from typing import Any
 
 import httpx
 
-from app.models.vapi import NormalizedToolCall
+from app.clients.emr import EMRClientProtocol
+from app.models.vapi import NormalizedToolCall, make_tool_result
 from app.services.appointments import cancel_appointment, reschedule_appointment
-from app.services.patients import find_verified_patient, list_verified_appointments, register_patient
+from app.services.patients import (
+    find_verified_patient,
+    list_verified_appointments,
+    register_patient,
+)
 from app.services.scheduling import book_appointment, list_providers, search_slots
 
 
 async def dispatch_tool_call(
     tool_call: NormalizedToolCall,
     *,
-    emr_client: Any | None = None,
+    emr_client: EMRClientProtocol | None = None,
 ) -> dict[str, str]:
     try:
         return await _dispatch_tool_call(tool_call, emr_client=emr_client)
     except httpx.HTTPError:
         # Keep EMR transport failures in the tool contract so Vapi can request staff help.
-        return {
-            "name": tool_call.name,
-            "toolCallId": tool_call.tool_call_id,
-            "result": json.dumps({"status": "emr_unavailable"}),
-        }
+        return make_tool_result(
+            name=tool_call.name,
+            tool_call_id=tool_call.tool_call_id,
+            result={"status": "emr_unavailable"},
+        )
 
 
 async def _dispatch_tool_call(
     tool_call: NormalizedToolCall,
     *,
-    emr_client: Any | None = None,
+    emr_client: EMRClientProtocol | None = None,
 ) -> dict[str, str]:
     if tool_call.name == "find_patient":
         phone = tool_call.arguments.get("phone")
@@ -44,10 +48,12 @@ async def _dispatch_tool_call(
                 date_of_birth=date_of_birth,
             )
     elif tool_call.name == "register_patient":
-        required_fields = ("first_name", "last_name", "date_of_birth", "phone")
+        registration_fields = ("first_name", "last_name", "date_of_birth", "phone")
         if emr_client is None:
             result = {"status": "emr_unavailable"}
-        elif not all(isinstance(tool_call.arguments.get(field), str) for field in required_fields):
+        elif not all(
+            isinstance(tool_call.arguments.get(field), str) for field in registration_fields
+        ):
             result = {"status": "invalid_arguments"}
         else:
             patient = {
@@ -97,7 +103,11 @@ async def _dispatch_tool_call(
         date_of_birth = tool_call.arguments.get("date_of_birth")
         if emr_client is None:
             result = {"status": "emr_unavailable"}
-        elif not all(isinstance(value, str) for value in (patient_id, phone, date_of_birth)):
+        elif (
+            not isinstance(patient_id, str)
+            or not isinstance(phone, str)
+            or not isinstance(date_of_birth, str)
+        ):
             result = {"status": "invalid_arguments"}
         else:
             result = await list_verified_appointments(
@@ -108,7 +118,7 @@ async def _dispatch_tool_call(
                 include_cancelled=tool_call.arguments.get("include_cancelled") is True,
             )
     elif tool_call.name == "book_appointment":
-        required_fields = (
+        booking_fields = (
             "patient_id",
             "verification_phone",
             "date_of_birth",
@@ -118,7 +128,7 @@ async def _dispatch_tool_call(
         )
         if emr_client is None:
             result = {"status": "emr_unavailable"}
-        elif not all(isinstance(tool_call.arguments.get(field), str) for field in required_fields):
+        elif not all(isinstance(tool_call.arguments.get(field), str) for field in booking_fields):
             result = {"status": "invalid_arguments"}
         else:
             result = await book_appointment(
@@ -132,10 +142,17 @@ async def _dispatch_tool_call(
                 reason=tool_call.arguments.get("reason"),
             )
     elif tool_call.name == "cancel_appointment":
-        required_fields = ("patient_id", "verification_phone", "date_of_birth", "appointment_id")
+        cancellation_fields = (
+            "patient_id",
+            "verification_phone",
+            "date_of_birth",
+            "appointment_id",
+        )
         if emr_client is None:
             result = {"status": "emr_unavailable"}
-        elif not all(isinstance(tool_call.arguments.get(field), str) for field in required_fields):
+        elif not all(
+            isinstance(tool_call.arguments.get(field), str) for field in cancellation_fields
+        ):
             result = {"status": "invalid_arguments"}
         elif tool_call.arguments.get("confirmed") is not True:
             result = {"status": "invalid_arguments"}
@@ -149,7 +166,7 @@ async def _dispatch_tool_call(
                 confirmed=True,
             )
     elif tool_call.name == "reschedule_appointment":
-        required_fields = (
+        reschedule_fields = (
             "patient_id",
             "verification_phone",
             "date_of_birth",
@@ -159,7 +176,9 @@ async def _dispatch_tool_call(
         )
         if emr_client is None:
             result = {"status": "emr_unavailable"}
-        elif not all(isinstance(tool_call.arguments.get(field), str) for field in required_fields):
+        elif not all(
+            isinstance(tool_call.arguments.get(field), str) for field in reschedule_fields
+        ):
             result = {"status": "invalid_arguments"}
         elif tool_call.arguments.get("confirmed") is not True:
             result = {"status": "invalid_arguments"}
@@ -180,8 +199,8 @@ async def _dispatch_tool_call(
     else:
         result = {"status": "unsupported_tool", "tool": tool_call.name}
 
-    return {
-        "name": tool_call.name,
-        "toolCallId": tool_call.tool_call_id,
-        "result": json.dumps(result),
-    }
+    return make_tool_result(
+        name=tool_call.name,
+        tool_call_id=tool_call.tool_call_id,
+        result=result,
+    )

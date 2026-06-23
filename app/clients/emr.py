@@ -1,6 +1,30 @@
-from typing import Any
+from typing import Any, Protocol
 
 import httpx
+
+
+class EMRClientProtocol(Protocol):
+    async def list_patients(
+        self,
+        *,
+        phone: str | None = None,
+        last_name: str | None = None,
+        date_of_birth: str | None = None,
+    ) -> list[dict[str, Any]]: ...
+
+    async def create_patient(self, patient: dict[str, Any]) -> dict[str, Any]: ...
+
+    async def list_providers(self) -> list[dict[str, Any]]: ...
+
+    async def search_slots(self, **filters: Any) -> list[dict[str, Any]]: ...
+
+    async def list_appointments(self, *, patient_id: str) -> list[dict[str, Any]]: ...
+
+    async def create_appointment(self, appointment: dict[str, Any]) -> dict[str, Any]: ...
+
+    async def get_appointment(self, appointment_id: str) -> dict[str, Any]: ...
+
+    async def cancel_appointment(self, appointment_id: str) -> dict[str, Any]: ...
 
 
 class EMRClient:

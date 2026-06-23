@@ -1,5 +1,6 @@
-import httpx
 import json
+
+import httpx
 import pytest
 
 from app.config import Settings
@@ -108,7 +109,9 @@ async def test_webhook_dispatches_find_patient_with_injected_emr_client() -> Non
 
 
 @pytest.mark.asyncio
-async def test_webhook_returns_safe_result_for_malformed_tool_arguments(app_with_webhook_secret) -> None:
+async def test_webhook_returns_safe_result_for_malformed_tool_arguments(
+    app_with_webhook_secret,
+) -> None:
     transport = httpx.ASGITransport(app=app_with_webhook_secret, raise_app_exceptions=False)
     payload = {
         "message": {
@@ -158,8 +161,12 @@ async def test_webhook_deduplicates_retried_registration_tool_call() -> None:
     }
 
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        first = await client.post("/vapi/webhook", headers={"Authorization": "Bearer test-secret"}, json=payload)
-        second = await client.post("/vapi/webhook", headers={"Authorization": "Bearer test-secret"}, json=payload)
+        first = await client.post(
+            "/vapi/webhook", headers={"Authorization": "Bearer test-secret"}, json=payload
+        )
+        second = await client.post(
+            "/vapi/webhook", headers={"Authorization": "Bearer test-secret"}, json=payload
+        )
 
     assert first.json() == second.json()
     assert emr_client.create_count == 1
@@ -171,7 +178,11 @@ async def test_webhook_reprocesses_mutation_after_idempotency_cache_expiry() -> 
     app = create_app(settings=Settings(vapi_webhook_secret="test-secret"), emr_client=emr_client)
     app.state.idempotency_cache["tool_register_expired"] = {
         "expires_at": 0,
-        "result": {"name": "register_patient", "toolCallId": "tool_register_expired", "result": "{}"},
+        "result": {
+            "name": "register_patient",
+            "toolCallId": "tool_register_expired",
+            "result": "{}",
+        },
     }
     transport = httpx.ASGITransport(app=app)
     payload = {
@@ -193,7 +204,9 @@ async def test_webhook_reprocesses_mutation_after_idempotency_cache_expiry() -> 
     }
 
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.post("/vapi/webhook", headers={"Authorization": "Bearer test-secret"}, json=payload)
+        response = await client.post(
+            "/vapi/webhook", headers={"Authorization": "Bearer test-secret"}, json=payload
+        )
 
     assert json.loads(response.json()["results"][0]["result"])["status"] == "created"
     assert emr_client.create_count == 1

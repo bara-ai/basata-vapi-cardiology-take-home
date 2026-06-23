@@ -2,11 +2,12 @@ from typing import Any
 
 import httpx
 
+from app.clients.emr import EMRClientProtocol
 from app.services.patients import find_verified_patient
 
 
 async def cancel_appointment(
-    emr_client: Any,
+    emr_client: EMRClientProtocol,
     *,
     patient_id: str,
     verification_phone: str,
@@ -39,7 +40,7 @@ async def cancel_appointment(
 
 
 async def reschedule_appointment(
-    emr_client: Any,
+    emr_client: EMRClientProtocol,
     *,
     patient_id: str,
     verification_phone: str,
@@ -76,7 +77,8 @@ async def reschedule_appointment(
                 "patient_id": patient_id,
                 "provider_id": new_provider_id,
                 "start_time": new_start_time,
-                "appointment_type": new_appointment_type or old_appointment.get("appointment_type", "follow_up"),
+                "appointment_type": new_appointment_type
+                or old_appointment.get("appointment_type", "follow_up"),
                 "reason": reason,
             }
         )
@@ -95,4 +97,8 @@ async def reschedule_appointment(
             return {"status": "partial_failure_requires_human", "appointment": replacement}
         return {"status": "reschedule_failed_original_preserved"}
 
-    return {"status": "rescheduled", "old_appointment_id": appointment_id, "appointment": replacement}
+    return {
+        "status": "rescheduled",
+        "old_appointment_id": appointment_id,
+        "appointment": replacement,
+    }

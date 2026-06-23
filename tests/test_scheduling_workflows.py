@@ -1,7 +1,7 @@
-from datetime import date, timedelta
-import httpx
 import json
+from datetime import date, timedelta
 
+import httpx
 import pytest
 
 from app.models.vapi import NormalizedToolCall
@@ -167,7 +167,9 @@ async def test_search_slots_supports_emr_slot_schema() -> None:
                 }
             ]
 
-    result = await search_slots(ActualSlotEMRClient(), patient_id="pat_123", appointment_type="follow_up")
+    result = await search_slots(
+        ActualSlotEMRClient(), patient_id="pat_123", appointment_type="follow_up"
+    )
 
     assert result["status"] == "ok"
     assert result["slots"][0]["supported_appointment_types"] == ["new_patient", "follow_up"]
@@ -179,7 +181,11 @@ async def test_dispatch_search_slots_returns_matching_slots() -> None:
     tool_call = NormalizedToolCall(
         tool_call_id="tool_slots",
         name="search_slots",
-        arguments={"patient_id": "pat_123", "appointment_type": "follow_up", "provider_id": "prov_martinez"},
+        arguments={
+            "patient_id": "pat_123",
+            "appointment_type": "follow_up",
+            "provider_id": "prov_martinez",
+        },
         call_id="call_123",
         customer_number=None,
     )

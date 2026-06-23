@@ -1,6 +1,5 @@
 from typing import Any
 
-
 SENSITIVE_FIELDS = {
     "phone",
     "verification_phone",
@@ -12,7 +11,4 @@ SENSITIVE_FIELDS = {
 
 
 def redact_event(event: dict[str, Any]) -> dict[str, Any]:
-    return {
-        key: "[REDACTED]" if key in SENSITIVE_FIELDS else value
-        for key, value in event.items()
-    }
+    return {key: "[REDACTED]" if key in SENSITIVE_FIELDS else value for key, value in event.items()}

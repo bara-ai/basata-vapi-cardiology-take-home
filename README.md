@@ -25,6 +25,17 @@ Run the tests with:
 python -m pytest -q
 ```
 
+## Quality Checks
+
+Run these checks before pushing changes:
+
+```powershell
+ruff check app tests
+ruff format --check app tests
+mypy app
+python -m pytest -q
+```
+
 Expose the service for Vapi:
 
 ```powershell

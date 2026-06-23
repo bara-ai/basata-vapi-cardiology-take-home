@@ -51,7 +51,9 @@ async def test_list_slots_reads_emr_collection() -> None:
     async with httpx.AsyncClient(base_url="https://emr.test") as http_client:
         client = EMRClient(http_client)
         with respx.mock(base_url="https://emr.test") as router:
-            route = router.get("/slots").mock(return_value=httpx.Response(200, json=[{"id": "slot_1"}]))
+            route = router.get("/slots").mock(
+                return_value=httpx.Response(200, json=[{"id": "slot_1"}])
+            )
 
             slots = await client.list_slots()
 
@@ -124,7 +126,11 @@ async def test_get_patient_and_provider_use_item_endpoints() -> None:
 
 @pytest.mark.asyncio
 async def test_create_appointment_posts_emr_payload() -> None:
-    appointment = {"patient_id": "pat_123", "provider_id": "prov_martinez", "start_time": "2026-06-22T09:00:00Z"}
+    appointment = {
+        "patient_id": "pat_123",
+        "provider_id": "prov_martinez",
+        "start_time": "2026-06-22T09:00:00Z",
+    }
     async with httpx.AsyncClient(base_url="https://emr.test") as http_client:
         client = EMRClient(http_client)
         with respx.mock(base_url="https://emr.test") as router:

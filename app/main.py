@@ -3,22 +3,24 @@ import json
 import logging
 import time
 from contextlib import asynccontextmanager
-from typing import Any
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException, Request
 
-from app.clients.emr import EMRClient
+from app.clients.emr import EMRClient, EMRClientProtocol
 from app.config import Settings
-from app.models.vapi import normalize_tool_calls
+from app.models.vapi import make_tool_result, normalize_tool_calls
 from app.services.tool_dispatch import dispatch_tool_call
 from app.telemetry.logging import redact_event
-
 
 logger = logging.getLogger(__name__)
 
 
-def create_app(*, settings: Settings | None = None, emr_client: Any | None = None) -> FastAPI:
+def create_app(
+    *,
+    settings: Settings | None = None,
+    emr_client: EMRClientProtocol | None = None,
+) -> FastAPI:
     app_settings = settings or Settings()
 
     @asynccontextmanager
@@ -74,11 +76,11 @@ def create_app(*, settings: Settings | None = None, emr_client: Any | None = Non
             result = {"status": "invalid_arguments"}
             return {
                 "results": [
-                    {
-                        "name": raw_tool_call.get("name") or function["name"],
-                        "toolCallId": raw_tool_call["id"],
-                        "result": json.dumps(result),
-                    }
+                    make_tool_result(
+                        name=raw_tool_call.get("name") or function["name"],
+                        tool_call_id=raw_tool_call["id"],
+                        result=result,
+                    )
                 ]
             }
 

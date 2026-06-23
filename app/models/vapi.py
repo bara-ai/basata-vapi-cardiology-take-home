@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -12,6 +12,19 @@ class NormalizedToolCall:
     customer_number: str | None
 
 
+def make_tool_result(
+    *,
+    name: str,
+    tool_call_id: str,
+    result: dict[str, Any],
+) -> dict[str, str]:
+    return {
+        "name": name,
+        "toolCallId": tool_call_id,
+        "result": json.dumps(result),
+    }
+
+
 def normalize_tool_calls(payload: dict[str, Any]) -> list[NormalizedToolCall]:
     # Isolate Vapi payload variants here so services receive one stable request shape.
     message = payload["message"]
@@ -21,7 +34,9 @@ def normalize_tool_calls(payload: dict[str, Any]) -> list[NormalizedToolCall]:
 
     tool_calls = message.get("toolCallList")
     if tool_calls is None:
-        tool_calls = [item.get("toolCall", item) for item in message.get("toolWithToolCallList", [])]
+        tool_calls = [
+            item.get("toolCall", item) for item in message.get("toolWithToolCallList", [])
+        ]
 
     for tool_call in tool_calls:
         function = tool_call.get("function", {})
