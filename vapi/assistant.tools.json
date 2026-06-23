@@ -8,7 +8,7 @@
         "description": "Verify an existing patient by registered phone and date of birth.",
         "parameters": {"type": "object", "properties": {"phone": {"type": "string"}, "date_of_birth": {"type": "string", "format": "date"}}, "required": ["phone", "date_of_birth"]}
       },
-      "server": {"url": "https://smile-battle-afterlife.ngrok-free.dev/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
+      "server": {"url": "https://YOUR-NGROK-DOMAIN/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
       "messages": [{"type": "request-start", "content": "Let me look up your record."}]
     },
     {
@@ -19,7 +19,7 @@
         "description": "Register a confirmed new patient.",
         "parameters": {"type": "object", "properties": {"first_name": {"type": "string"}, "last_name": {"type": "string"}, "date_of_birth": {"type": "string", "format": "date"}, "phone": {"type": "string"}, "email": {"type": ["string", "null"]}, "insurance_provider": {"type": ["string", "null"]}, "insurance_member_id": {"type": ["string", "null"]}}, "required": ["first_name", "last_name", "date_of_birth", "phone"]}
       },
-      "server": {"url": "https://smile-battle-afterlife.ngrok-free.dev/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
+      "server": {"url": "https://YOUR-NGROK-DOMAIN/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
       "messages": [{"type": "request-start", "content": "I am creating your patient record now."}]
     },
     {
@@ -30,7 +30,7 @@
         "description": "List cardiology providers by specialty or appointment type.",
         "parameters": {"type": "object", "properties": {"specialty": {"type": ["string", "null"]}, "appointment_type": {"type": ["string", "null"]}}}
       },
-      "server": {"url": "https://smile-battle-afterlife.ngrok-free.dev/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
+      "server": {"url": "https://YOUR-NGROK-DOMAIN/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
       "messages": [{"type": "request-start", "content": "Let me check the available providers."}]
     },
     {
@@ -41,7 +41,7 @@
         "description": "Search real EMR availability for a verified patient.",
         "parameters": {"type": "object", "properties": {"patient_id": {"type": "string"}, "appointment_type": {"type": "string", "enum": ["new_patient", "follow_up", "procedure_consult", "stress_test", "telehealth"]}, "provider_id": {"type": ["string", "null"]}, "start_date": {"type": ["string", "null"], "format": "date"}, "end_date": {"type": ["string", "null"], "format": "date"}, "number_of_slots_to_present": {"type": "integer", "minimum": 1, "maximum": 5}}, "required": ["patient_id", "appointment_type"]}
       },
-      "server": {"url": "https://smile-battle-afterlife.ngrok-free.dev/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
+      "server": {"url": "https://YOUR-NGROK-DOMAIN/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
       "messages": [{"type": "request-start", "content": "One moment while I check availability."}]
     },
     {
@@ -52,7 +52,7 @@
         "description": "List appointments after phone-and-date-of-birth verification.",
         "parameters": {"type": "object", "properties": {"patient_id": {"type": "string"}, "verification_phone": {"type": "string"}, "date_of_birth": {"type": "string", "format": "date"}, "include_cancelled": {"type": "boolean"}}, "required": ["patient_id", "verification_phone", "date_of_birth"]}
       },
-      "server": {"url": "https://smile-battle-afterlife.ngrok-free.dev/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
+      "server": {"url": "https://YOUR-NGROK-DOMAIN/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
       "messages": [{"type": "request-start", "content": "Let me pull up your appointments."}]
     },
     {
@@ -63,7 +63,7 @@
         "description": "Book a caller-confirmed appointment.",
         "parameters": {"type": "object", "properties": {"patient_id": {"type": "string"}, "verification_phone": {"type": "string"}, "date_of_birth": {"type": "string", "format": "date"}, "provider_id": {"type": "string"}, "start_time": {"type": "string"}, "appointment_type": {"type": "string", "enum": ["new_patient", "follow_up", "procedure_consult", "stress_test", "telehealth"]}, "reason": {"type": ["string", "null"]}}, "required": ["patient_id", "verification_phone", "date_of_birth", "provider_id", "start_time", "appointment_type"]}
       },
-      "server": {"url": "https://smile-battle-afterlife.ngrok-free.dev/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
+      "server": {"url": "https://YOUR-NGROK-DOMAIN/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
       "messages": [{"type": "request-start", "content": "I am booking that appointment."}]
     },
     {
@@ -74,7 +74,7 @@
         "description": "Cancel a caller-confirmed appointment.",
         "parameters": {"type": "object", "properties": {"patient_id": {"type": "string"}, "verification_phone": {"type": "string"}, "date_of_birth": {"type": "string", "format": "date"}, "appointment_id": {"type": "string"}, "confirmed": {"type": "boolean"}}, "required": ["patient_id", "verification_phone", "date_of_birth", "appointment_id", "confirmed"]}
       },
-      "server": {"url": "https://smile-battle-afterlife.ngrok-free.dev/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
+      "server": {"url": "https://YOUR-NGROK-DOMAIN/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
       "messages": [{"type": "request-start", "content": "I am cancelling that appointment now."}]
     },
     {
@@ -85,7 +85,7 @@
         "description": "Book a confirmed replacement before cancelling the old appointment.",
         "parameters": {"type": "object", "properties": {"patient_id": {"type": "string"}, "verification_phone": {"type": "string"}, "date_of_birth": {"type": "string", "format": "date"}, "appointment_id": {"type": "string"}, "new_provider_id": {"type": "string"}, "new_start_time": {"type": "string"}, "new_appointment_type": {"type": ["string", "null"], "enum": ["new_patient", "follow_up", "procedure_consult", "stress_test", "telehealth", null]}, "reason": {"type": ["string", "null"]}, "confirmed": {"type": "boolean"}}, "required": ["patient_id", "verification_phone", "date_of_birth", "appointment_id", "new_provider_id", "new_start_time", "confirmed"]}
       },
-      "server": {"url": "https://smile-battle-afterlife.ngrok-free.dev/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
+      "server": {"url": "https://YOUR-NGROK-DOMAIN/vapi/webhook", "credentialId": "cred_your_vapi_bearer_credential"},
       "messages": [{"type": "request-start", "content": "I am changing that appointment now."}]
     }
   ]
