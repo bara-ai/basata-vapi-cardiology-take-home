@@ -13,6 +13,7 @@ class NormalizedToolCall:
 
 
 def normalize_tool_calls(payload: dict[str, Any]) -> list[NormalizedToolCall]:
+    # Isolate Vapi payload variants here so services receive one stable request shape.
     message = payload["message"]
     call = message.get("call", {})
     customer = call.get("customer", {})
@@ -31,6 +32,7 @@ def normalize_tool_calls(payload: dict[str, Any]) -> list[NormalizedToolCall]:
             arguments = tool_call.get("parameters", function.get("parameters", {}))
         name = tool_call.get("name") or function["name"]
         if isinstance(arguments, str):
+            # Some Vapi function calls encode arguments as a JSON string.
             arguments = json.loads(arguments)
 
         normalized_calls.append(

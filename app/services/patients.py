@@ -43,6 +43,7 @@ async def list_verified_appointments(
     date_of_birth: str,
     include_cancelled: bool = False,
 ) -> dict[str, Any]:
+    # Re-verify before disclosure because a patient ID alone is not caller authentication.
     verification = await find_verified_patient(
         emr_client,
         phone=verification_phone,

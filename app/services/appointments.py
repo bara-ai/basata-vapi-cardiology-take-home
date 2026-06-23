@@ -17,6 +17,7 @@ async def cancel_appointment(
     if not confirmed:
         return {"status": "invalid_arguments"}
 
+    # Re-verify at the mutation boundary and confirm the appointment belongs to this patient.
     verification = await find_verified_patient(
         emr_client,
         phone=verification_phone,
@@ -53,6 +54,7 @@ async def reschedule_appointment(
     if not confirmed:
         return {"status": "invalid_arguments"}
 
+    # Re-verify at the mutation boundary and confirm the appointment belongs to this patient.
     verification = await find_verified_patient(
         emr_client,
         phone=verification_phone,
@@ -67,6 +69,7 @@ async def reschedule_appointment(
     if old_appointment.get("status") != "scheduled":
         return {"status": "invalid_arguments"}
 
+    # Book first so a failed replacement does not remove the caller's existing appointment.
     try:
         replacement = await emr_client.create_appointment(
             {
@@ -85,6 +88,7 @@ async def reschedule_appointment(
     try:
         await emr_client.cancel_appointment(appointment_id)
     except Exception:
+        # Compensate by removing the replacement when the old appointment could not be cancelled.
         try:
             await emr_client.cancel_appointment(replacement["id"])
         except Exception:

@@ -107,6 +107,7 @@ async def book_appointment(
     appointment_type: str,
     reason: str | None = None,
 ) -> dict[str, Any]:
+    # Booking is a mutation, so do not rely on verification from an earlier call turn.
     verification = await find_verified_patient(
         emr_client,
         phone=verification_phone,

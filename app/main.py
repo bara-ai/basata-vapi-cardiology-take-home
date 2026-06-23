@@ -46,6 +46,7 @@ def create_app(*, settings: Settings | None = None, emr_client: Any | None = Non
         if not expected or not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
+        # Use a constant-time comparison at the public webhook boundary.
         if not hmac.compare_digest(supplied, expected):
             raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -91,6 +92,7 @@ def create_app(*, settings: Settings | None = None, emr_client: Any | None = Non
         for call in calls:
             started_at = time.perf_counter()
             cached_entry = app.state.idempotency_cache.get(call.tool_call_id)
+            # Vapi may retry mutations; replay the original result instead of changing EMR state twice.
             if (
                 app_settings.enable_idempotency_memory
                 and call.name in mutation_tools

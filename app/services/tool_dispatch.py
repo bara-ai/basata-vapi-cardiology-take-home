@@ -17,6 +17,7 @@ async def dispatch_tool_call(
     try:
         return await _dispatch_tool_call(tool_call, emr_client=emr_client)
     except httpx.HTTPError:
+        # Keep EMR transport failures in the tool contract so Vapi can request staff help.
         return {
             "name": tool_call.name,
             "toolCallId": tool_call.tool_call_id,

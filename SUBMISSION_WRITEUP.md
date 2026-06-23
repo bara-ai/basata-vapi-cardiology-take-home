@@ -2,7 +2,7 @@
 
 ## What I Built
 
-I made a Vapi voice assistant for Heartland Cardiology. It is connected to a FastAPI backend and the CardioChart Pro sandbox EMR. The assistant is in the Interview Sandbox as [Heartland Cardiology](https://dashboard.vapi.ai/assistants/9ca91034-3de4-44be-bba6-5aa756128d64?tab=assistant). The phone number is `+1 601 419 9125`.
+I made Baseet, a voice assistant for Heartland Cardiology. It is connected to a FastAPI backend and the CardioChart Pro sandbox EMR. The assistant is in the Interview Sandbox as [Heartland Cardiology](https://dashboard.vapi.ai/assistants/9ca91034-3de4-44be-bba6-5aa756128d64?tab=assistant). The phone number is `+1 601 419 9125`.
 
 The assistant can register a new patient and find an existing patient and find providers and available slots and book appointments and look up appointments and cancel appointments and reschedule appointments.
 
@@ -30,9 +30,7 @@ If there are no slots then the assistant does not make up another time. If a sel
 
 Rescheduling has more than one step. The system first tries to book the replacement appointment and then cancels the old appointment. If the new appointment cannot be booked then the old appointment stays unchanged. If the old appointment cannot be cancelled after the new one is booked then the backend tries to cancel the new appointment again. If the system cannot fix this safely then it asks for staff help. When the caller does not ask to change the appointment type then the old type stays the same.
 
-The backend also has retry protection for booking and other changes. This helps prevent a repeated Vapi request from creating the same action twice during the demo.
-
-Vapi can send a tool request in different payload shapes. The backend changes these shapes into one internal tool request before it starts the workflow. The scheduling tools stay synchronous because the assistant needs the current EMR result before it can continue the same call. The retry protection uses the Vapi `toolCallId` and keeps the result in memory for the demo. For production this should be stored in Redis or Postgres.
+The backend has retry protection for booking and other changes. This helps prevent a repeated Vapi request from creating the same action twice during the demo. The scheduling tools stay synchronous because the assistant needs the current EMR result before it can continue the same call. The retry protection uses the Vapi `toolCallId` and keeps the result in memory for the demo. For production this should be stored in Redis or Postgres.
 
 ## Voice Design
 
@@ -40,10 +38,18 @@ This is made for phone calls and not chat. The assistant uses short sentences an
 
 The assistant does not give medical advice or insurance advice or pricing advice. If the caller describes an emergency then it tells the caller to use emergency services and it stops normal scheduling.
 
-## Testing And Deferred Work
+## Backend Implementation Details
 
-The project has `48` automated tests. They cover Vapi request formats and authentication and patient workflows and booking and cancellation and rescheduling and error cases. The public webhook was also tested with the sandbox EMR for registration and provider lookup and slot search and booking and rescheduling and cancellation.
+The Vapi payload normalizer changes the different Vapi tool call formats into one internal request shape. This includes the tool call ID and tool name and arguments and call ID and caller phone number. Some requests have arguments as a JSON string and some already have a dictionary. The normalizer handles this once so the service code does not need to care about Vapi payload differences.
 
-Native Vapi call transfer is not added yet. A real front desk phone number and business hours were not provided. The assistant says that clinic staff need to help but it does not say that the caller was transferred.
+The patient service uses `find_verified_patient` to check the phone number and date of birth before it returns a verified patient. It normalizes phone digits first so different phone formats can match the same record. `register_patient` also checks for an existing phone number before creating a new patient. `list_verified_appointments` verifies the patient again before reading appointment data and cancelled appointments stay hidden unless the caller asks for cancelled history.
 
-With more time I would use Redis or Postgres for retry protection and use managed deployment instead of a development tunnel. I would also add more monitoring for EMR failures and tool latency and slot conflicts and staff help requests.
+The scheduling service uses `list_providers` and `search_slots` to get provider and slot data from the EMR. `list_providers` can filter providers by specialty or appointment type and it returns a simple provider structure for the assistant. `search_slots` uses a default range from today until two weeks later when the caller does not give dates and it limits the returned slots. `book_appointment` verifies the patient again because booking changes EMR data and it maps an EMR slot conflict to a clear conflict result.
+
+The appointment service uses `cancel_appointment` to check confirmation and patient ownership before cancellation. It will not cancel an appointment that is already cancelled or not scheduled. `reschedule_appointment` is kept in the backend as one controlled workflow so the assistant does not have to make two separate mutation decisions. It books the replacement first and then cancels the old appointment and it tries compensation when the second step fails.
+
+The tool dispatcher is the routing layer between Vapi and the services. It validates the tool name and required arguments and calls the correct patient or scheduling or appointment function. EMR HTTP errors become an `emr_unavailable` result instead of an unhandled backend failure.
+
+The FastAPI application has a health endpoint and the authenticated Vapi webhook endpoint. It creates a shared EMR client during the application lifecycle and closes it on shutdown. The webhook checks the Vapi Bearer secret with a constant time comparison and it logs outcomes with sensitive fields removed. Phone number and date of birth and email and insurance member ID and transcript fields are redacted from logs.
+
+The automated tests are grouped by the main boundaries of the project. They check the application health and webhook authentication and Vapi payload formats and log redaction and EMR client requests. They also check patient registration and verification and provider and slot search and booking and cancellation and rescheduling and live verification script behavior. This gives evidence for both normal workflows and the important failure cases.
