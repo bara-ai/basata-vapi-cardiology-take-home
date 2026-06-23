@@ -1,4 +1,4 @@
-# Basata Voice AI Take-Home
+# Basata Exercise
 
 FastAPI backend and Vapi configuration for a Heartland Cardiology scheduling agent backed by the CardioChart Pro sandbox.
 
